@@ -1,8 +1,13 @@
 'use client';
+import { useCallback } from 'react';
+
+import { useStandardEmitter } from '../../../standard-navigation/useStandardEmitter';
 import {
+  CommonActions,
   createNavigatorFactory,
   type NavigatorTypeBagBase,
   type ParamListBase,
+  StackActions,
   type TabActionHelpers,
   type TabNavigationState,
   TabRouter,
@@ -48,9 +53,47 @@ function BottomTabNavigator({
     UNSTABLE_router,
   });
 
+  const emitter = useStandardEmitter(navigation);
+
+  const navigateToTab = useCallback(
+    (routeKey: string) => {
+      const route = state.routes.find((route) => route.key === routeKey);
+
+      if (route) {
+        navigation.dispatch({
+          ...CommonActions.navigate(route),
+          target: state.key,
+        });
+      }
+    },
+    [navigation, state.key, state.routes]
+  );
+
+  const popNestedStackToTop = useCallback(
+    (routeKey: string) => {
+      const prevRoute = state.routes.find((route) => route.key === routeKey);
+
+      if (prevRoute?.state?.type === 'stack' && prevRoute.state.key) {
+        navigation.dispatch({
+          ...StackActions.popToTop(),
+          target: prevRoute.state.key,
+        });
+      }
+    },
+    [navigation, state.routes]
+  );
+
   return (
     <NavigationContent>
-      <BottomTabView {...rest} state={state} navigation={navigation} descriptors={descriptors} />
+      <BottomTabView
+        {...rest}
+        state={state}
+        descriptors={descriptors}
+        emitter={emitter}
+        navigateToTab={navigateToTab}
+        preloadedRouteKeys={state.preloadedRouteKeys}
+        popNestedStackToTop={popNestedStackToTop}
+      />
     </NavigationContent>
   );
 }
