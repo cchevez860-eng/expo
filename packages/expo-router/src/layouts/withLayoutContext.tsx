@@ -19,7 +19,7 @@ import { isScreen, Screen } from '../views/Screen';
 import { GuardContextProvider, normalizeRouteName, type GuardedRedirects } from './GuardContext';
 import { IsWithinLayoutContext } from './IsWithinLayoutContext';
 
-export function useFilterScreenChildren(
+export function useFilterScreenChildren<TOptions extends object = Record<string, any>>(
   children: ReactNode,
   {
     isCustomNavigator,
@@ -33,12 +33,14 @@ export function useFilterScreenChildren(
   return useMemo(() => {
     const customChildren: any[] = [];
 
-    const screens: (ScreenProps & { name: string })[] = [];
+    // The declared screens carry the navigator's `TOptions` options at runtime, but the type
+    // guards below collect them untyped, so the pushes restore the type.
+    const screens: (ScreenProps<TOptions> & { name: string })[] = [];
     const guardedRedirects: GuardedRedirects = new Map();
 
     function flattenChild(child: ReactNode, exclude = false, redirectTo?: Href) {
       if (isScreen(child, contextKey)) {
-        screens.push(child.props);
+        screens.push(child.props as ScreenProps<TOptions> & { name: string });
         if (exclude) {
           guardedRedirects.set(child.props.name, redirectTo);
         }
@@ -50,7 +52,7 @@ export function useFilterScreenChildren(
         screens.push({
           ...child.props,
           options: exclude ? { ...options, hidden: true } : options,
-        } as ScreenProps & { name: string });
+        } as ScreenProps<TOptions> & { name: string });
         if (exclude) {
           guardedRedirects.set(child.props.name, redirectTo);
         }
@@ -142,13 +144,13 @@ export function withLayoutContext<
   T extends ComponentType<any>,
   TState extends NavigationState,
   TEventMap extends EventMapBase,
->(Nav: T, processor?: (options: ScreenProps[]) => ScreenProps[]) {
+>(Nav: T, processor?: (options: ScreenProps<TOptions>[]) => ScreenProps<TOptions>[]) {
   return Object.assign(
     forwardRef(({ children: userDefinedChildren, ...props }: any, ref) => {
       const contextKey = useContextKey();
       const node = useRouteNode();
 
-      const { screens, guardedRedirects } = useFilterScreenChildren(userDefinedChildren, {
+      const { screens, guardedRedirects } = useFilterScreenChildren<TOptions>(userDefinedChildren, {
         contextKey,
       });
 

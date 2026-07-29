@@ -14,6 +14,7 @@ import type {
   RouteSource,
 } from '../react-navigation/native';
 import type { GoBackAction, NavigateAction } from '../react-navigation/routers/CommonActions';
+import type { ScreenProps } from '../useScreens';
 
 export type StandardNavigatorEventMapBase = Record<
   string,
@@ -83,7 +84,19 @@ type CreatePropsOption<State extends NavigationState, CreateProps extends object
 export type IntegrateWithRouterOptions<
   State extends NavigationState = NavigationState,
   CreateProps extends object = object,
-> = CreatePropsOption<State, CreateProps>;
+  NavigatorOptions extends object = Record<string, any>,
+> = CreatePropsOption<State, CreateProps> & {
+  /**
+   * Transforms the screens declared as children of the navigator before they are rendered.
+   *
+   * @example
+   * ```tsx
+   * processScreens: (screens) =>
+   *   screens.map((screen) => ({ ...screen, options: { ...screen.options, title: screen.name } })),
+   * ```
+   */
+  processScreens?: (screens: ScreenProps<NavigatorOptions>[]) => ScreenProps<NavigatorOptions>[];
+};
 
 /**
  * A standard-navigation descriptor extended with Expo Router route information.
