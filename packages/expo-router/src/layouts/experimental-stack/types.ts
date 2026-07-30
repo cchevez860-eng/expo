@@ -19,6 +19,11 @@ import type {
  * @experimental
  */
 export type ExperimentalStackNavigationOptions = {
+  /**
+   * Whether actions that remove this screen from the navigation state are prevented.
+   * Blocked attempts emit the `removePrevented` event.
+   */
+  preventRemove?: boolean;
   title?: string;
   headerShown?: boolean;
   headerTransparent?: boolean;

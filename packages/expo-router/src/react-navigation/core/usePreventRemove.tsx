@@ -6,11 +6,31 @@ import useLatestCallback from '../../utils/useLatestCallback';
 import type { NavigationAction } from '../routers';
 import type { EventListenerCallback, EventMapCore } from './types';
 import { useNavigation } from './useNavigation';
-import { usePreventRemoveContext } from './usePreventRemoveContext';
 import { useRoute } from './useRoute';
 
+const registry = new WeakMap<object, Map<string, Set<string>>>();
+
+const getRegistrations = (navigation: object) => {
+  let registrations = registry.get(navigation);
+  if (!registrations) {
+    registrations = new Map();
+    registry.set(navigation, registrations);
+  }
+  return registrations;
+};
+
+const syncOption = (
+  navigation: { setOptions(options: { preventRemove: boolean }): void },
+  routeKey: string
+) => {
+  navigation.setOptions({
+    preventRemove: Boolean(getRegistrations(navigation).get(routeKey)?.size),
+  });
+};
+
 /**
- * Hook to prevent screen from being removed. Can be used to prevent users from leaving the screen.
+ * Prevents the screen from being removed while `preventRemove` is `true`.
+ * The hook writes the `preventRemove` screen option, so manually setting the same option is last-wins.
  *
  * @param preventRemove Boolean indicating whether to prevent screen from being removed.
  * @param callback Function which is executed when screen was prevented from being removed.
@@ -20,33 +40,43 @@ export function usePreventRemove(
   callback: (options: { data: { action: NavigationAction } }) => void
 ) {
   const [id] = React.useState(() => nanoid());
-
   const navigation = useNavigation();
   const { key: routeKey } = useRoute();
 
-  const { setPreventRemove } = usePreventRemoveContext();
-
   React.useEffect(() => {
-    setPreventRemove(id, routeKey, preventRemove);
-    return () => {
-      setPreventRemove(id, routeKey, false);
-    };
-  }, [setPreventRemove, id, routeKey, preventRemove]);
-
-  const beforeRemoveListener = useLatestCallback<
-    EventListenerCallback<EventMapCore<any>, 'beforeRemove'>
-  >((e) => {
-    if (!preventRemove) {
-      return;
+    const registry = getRegistrations(navigation);
+    const registrations = registry.get(routeKey) ?? new Set<string>();
+    if (preventRemove) {
+      registrations.add(id);
+      registry.set(routeKey, registrations);
+    } else {
+      registrations.delete(id);
+      if (registrations.size === 0) {
+        registry.delete(routeKey);
+      }
     }
+    syncOption(navigation, routeKey);
 
-    e.preventDefault();
+    return () => {
+      const registrations = registry.get(routeKey);
+      registrations?.delete(id);
+      if (registrations?.size === 0) {
+        registry.delete(routeKey);
+      }
+      syncOption(navigation, routeKey);
+    };
+  }, [id, navigation, preventRemove, routeKey]);
 
-    callback({ data: e.data });
+  const removePreventedListener = useLatestCallback<
+    EventListenerCallback<EventMapCore<any>, 'removePrevented'>
+  >((event) => {
+    if (preventRemove) {
+      callback({ data: event.data });
+    }
   });
 
   React.useEffect(
-    () => navigation?.addListener('beforeRemove', beforeRemoveListener),
-    [navigation, beforeRemoveListener]
+    () => navigation.addListener('removePrevented', removePreventedListener),
+    [navigation, removePreventedListener]
   );
 }

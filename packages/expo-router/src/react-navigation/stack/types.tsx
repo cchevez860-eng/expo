@@ -290,6 +290,11 @@ export type StackDescriptorMap = Record<string, StackDescriptor>;
 export type StackNavigationOptions = StackHeaderOptions &
   Partial<TransitionPreset> & {
     /**
+     * Whether actions that remove this screen from the navigation state are prevented.
+     * Blocked attempts emit the `removePrevented` event.
+     */
+    preventRemove?: boolean;
+    /**
      * String that can be displayed in the header as a fallback for `headerTitle`.
      */
     title?: string;

@@ -485,7 +485,7 @@ test('fires custom events added with addListener', () => {
   expect(thirdCallback.mock.calls[0][0].data).toBe(42);
   expect(thirdCallback.mock.calls[0][0].target).toBe(target);
   expect(thirdCallback.mock.calls[0][0].defaultPrevented).toBeUndefined();
-  expect(thirdCallback.mock.calls[0][0].preventDefault).toBeUndefined();
+  expect(thirdCallback.mock.calls[0][0].preventDefault).toEqual(expect.any(Function));
 
   act(() => {
     ref.current.navigation.emit({ type: eventName });
@@ -611,7 +611,7 @@ test('fires custom events added with listeners prop', () => {
   expect(thirdCallback.mock.calls[0][0].data).toBe(42);
   expect(thirdCallback.mock.calls[0][0].target).toBe(target);
   expect(thirdCallback.mock.calls[0][0].defaultPrevented).toBeUndefined();
-  expect(thirdCallback.mock.calls[0][0].preventDefault).toBeUndefined();
+  expect(thirdCallback.mock.calls[0][0].preventDefault).toEqual(expect.any(Function));
 
   act(() => {
     ref.current.navigation.emit({ type: eventName });
@@ -740,7 +740,7 @@ test('fires listeners when callback is provided for listeners prop', () => {
   expect(thirdCallback.mock.calls[0][0].data).toBe(42);
   expect(thirdCallback.mock.calls[0][0].target).toBe(target);
   expect(thirdCallback.mock.calls[0][0].defaultPrevented).toBeUndefined();
-  expect(thirdCallback.mock.calls[0][0].preventDefault).toBeUndefined();
+  expect(thirdCallback.mock.calls[0][0].preventDefault).toEqual(expect.any(Function));
 
   act(() => {
     ref.current.navigation.emit({ type: eventName });

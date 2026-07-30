@@ -739,13 +739,21 @@ export function useNavigationBuilder<
 
   const { keyedListeners, addKeyedListener } = useKeyedChildListeners();
 
+  const descriptorsRef = React.useRef<Record<string, { options: ScreenOptions }>>({});
+  const getRouteOptions = React.useCallback(
+    (routeKey: string) => descriptorsRef.current[routeKey]?.options,
+    []
+  );
+
   const onAction = useOnAction({
     router,
     getState,
     setState,
     key: route?.key,
     actionListeners: childListeners.action,
+    preventRemoveListeners: keyedListeners.preventRemove,
     beforeRemoveListeners: keyedListeners.beforeRemove,
+    getRouteOptions,
     routerConfigOptions: {
       routeNames,
       routeParamList,
@@ -803,6 +811,7 @@ export function useNavigationBuilder<
     // @ts-expect-error: this should have both core and custom events, but too much work right now
     emitter,
   });
+  descriptorsRef.current = descriptors;
 
   useCurrentRender({
     state,
@@ -826,7 +835,9 @@ export function useNavigationBuilder<
         <NavigationHelpersContext.Provider value={navigation}>
           <NavigationStateListenerProvider state={state}>
             <FocusedRouteKeyContext.Provider value={state.routes[state.index]!.key}>
-              <PreventRemoveProvider>{element}</PreventRemoveProvider>
+              <PreventRemoveProvider state={state} descriptors={descriptors}>
+                {element}
+              </PreventRemoveProvider>
             </FocusedRouteKeyContext.Provider>
           </NavigationStateListenerProvider>
         </NavigationHelpersContext.Provider>

@@ -4,6 +4,7 @@ import { Text } from 'react-native';
 
 import { router } from '../imperative-api';
 import { ExperimentalStack } from '../layouts/experimental-stack';
+import { usePreventRemove } from '../react-navigation/native';
 import { renderRouter } from '../testing-library';
 
 jest.mock('react-native-screens/experimental', () => {
@@ -303,6 +304,35 @@ describe('ExperimentalStack — dismiss handlers', () => {
 
     expect(screen).toHavePathname('/a');
   });
+
+  it('onNativeDismissPrevented dispatches the blocked pop', () => {
+    const onPreventRemove = jest.fn();
+    const ProtectedScreen = () => {
+      usePreventRemove(true, onPreventRemove);
+      return null;
+    };
+
+    renderRouter(
+      {
+        a: () => null,
+        b: ProtectedScreen,
+        _layout: () => <ExperimentalStack />,
+      },
+      { initialUrl: '/a' }
+    );
+
+    act(() => router.push('/b'));
+    const propsB = MockedScreen.mock.calls
+      .map((call) => call[0])
+      .reverse()
+      .find((props: any) => props.screenKey?.startsWith('b-'));
+
+    expect(propsB.preventNativeDismiss).toBe(true);
+    act(() => propsB.onNativeDismissPrevented());
+
+    expect(screen).toHavePathname('/b');
+    expect(onPreventRemove).toHaveBeenCalledTimes(1);
+  });
 });
 
 describe('ExperimentalStack — unsupported option warning', () => {
@@ -350,6 +380,7 @@ describe('ExperimentalStack — unsupported option warning', () => {
           _layout: () => (
             <ExperimentalStack
               screenOptions={{
+                preventRemove: true,
                 title: 'Hello',
                 headerShown: true,
                 headerTransparent: false,

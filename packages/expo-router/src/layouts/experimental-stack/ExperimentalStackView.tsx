@@ -18,6 +18,7 @@ import type {
 } from './types';
 
 const SUPPORTED_OPTION_KEYS = new Set<keyof ExperimentalStackNavigationOptions>([
+  'preventRemove',
   'title',
   'headerShown',
   'headerTransparent',
@@ -80,8 +81,8 @@ export function ExperimentalStackView({ state, navigation, descriptors }: Props)
               }}
               onNativeDismiss={() => {
                 // Native dismissal (e.g. swipe-to-dismiss). JS state still has the route —
-                // catch up by dispatching pop and arming useDismissedRouteError so a stuck
-                // beforeRemove listener surfaces an actionable console.error.
+                // catch up by dispatching pop and arming useDismissedRouteError so a stale
+                // preventRemove option surfaces an actionable console.error.
                 navigation.dispatch({
                   ...StackActions.pop(),
                   source: route.key,
@@ -90,6 +91,11 @@ export function ExperimentalStackView({ state, navigation, descriptors }: Props)
                 setNextDismissedKey(route.key);
               }}
               onNativeDismissPrevented={() => {
+                navigation.dispatch({
+                  ...StackActions.pop(),
+                  source: route.key,
+                  target: state.key,
+                });
                 navigation.emit({
                   type: 'gestureCancel',
                   data: undefined,
@@ -183,7 +189,7 @@ function useUnsupportedOptionsWarning(
       `ExperimentalStack: ignoring unsupported screenOption${unsupported.length > 1 ? 's' : ''} ${unsupported
         .map((key) => `'${key}'`)
         .join(', ')} on route '${routeName}'. ` +
-        `The new react-native-screens experimental Stack only supports 'title', 'headerShown', 'headerTransparent', and 'headerBackVisible'. ` +
+        `The new react-native-screens experimental Stack only supports 'preventRemove', 'title', 'headerShown', 'headerTransparent', and 'headerBackVisible'. ` +
         `Custom headers, presentation, animation, sheets, and status bar options are not yet available — keep using <Stack /> for those screens.`
     );
   }, [options, routeName]);

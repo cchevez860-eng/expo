@@ -122,6 +122,15 @@ export function useEventEmitter<T extends Record<string, any>>(
             },
           },
         });
+      } else {
+        Object.defineProperty(event, 'preventDefault', {
+          enumerable: true,
+          value() {
+            if (__DEV__) {
+              console.warn(`The event '${type}' is not preventable.`);
+            }
+          },
+        });
       }
 
       listenRef.current?.(event);

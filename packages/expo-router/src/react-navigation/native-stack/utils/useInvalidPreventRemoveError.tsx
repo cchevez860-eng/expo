@@ -15,7 +15,7 @@ export function useInvalidPreventRemoveError(descriptors: NativeStackDescriptorM
   React.useEffect(() => {
     if (preventedRouteKey != null && isHeaderBackButtonMenuEnabledOnPreventedScreen) {
       const message =
-        `The screen ${preventedRouteName} uses 'usePreventRemove' hook alongside 'headerBackButtonMenuEnabled: true', which is not supported. \n\n` +
+        `The screen ${preventedRouteName} uses 'preventRemove: true' alongside 'headerBackButtonMenuEnabled: true', which is not supported. \n\n` +
         `Consider removing 'headerBackButtonMenuEnabled: true' from ${preventedRouteName} screen to get rid of this error.`;
       console.error(message);
     }

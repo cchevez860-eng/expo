@@ -1,4 +1,5 @@
 import { act, render } from '@testing-library/react-native';
+import * as React from 'react';
 import { use, useEffect } from 'react';
 
 import { CommonActions, type ParamListBase, StackActions, StackRouter } from '../../routers';
@@ -197,14 +198,13 @@ test("prevents removing a screen with 'usePreventRemove' hook", () => {
 
   const onPreventRemove = jest.fn();
 
-  let shouldContinue = false;
+  let setPreventRemove: React.Dispatch<React.SetStateAction<boolean>>;
 
-  const TestScreen = (props: any) => {
-    usePreventRemove(true, ({ data }) => {
+  const TestScreen = () => {
+    const [preventRemove, setPreventRemoveState] = React.useState(true);
+    setPreventRemove = setPreventRemoveState;
+    usePreventRemove(preventRemove, () => {
       onPreventRemove();
-      if (shouldContinue) {
-        props.navigation.dispatch(data.action);
-      }
     });
 
     return null;
@@ -275,12 +275,11 @@ test("prevents removing a screen with 'usePreventRemove' hook", () => {
     type: 'stack',
   });
 
-  shouldContinue = true;
+  act(() => setPreventRemove(false));
 
-  act(() => ref.current?.navigate('bar'));
   act(() => ref.current?.dispatch(StackActions.popTo('foo')));
 
-  expect(onStateChange).toHaveBeenCalledTimes(4);
+  expect(onStateChange).toHaveBeenCalledTimes(3);
   expect(onStateChange).toHaveBeenCalledWith({
     index: 0,
     key: 'stack-2',
@@ -304,15 +303,14 @@ test("prevents removing a screen when 'usePreventRemove' hook is called multiple
 
   const onPreventRemove = jest.fn();
 
-  let shouldContinue = false;
+  let setPreventRemove: React.Dispatch<React.SetStateAction<boolean>>;
 
-  const TestScreen = (props: any) => {
+  const TestScreen = () => {
+    const [preventRemove, setPreventRemoveState] = React.useState(true);
+    setPreventRemove = setPreventRemoveState;
     usePreventRemove(false, () => {});
-    usePreventRemove(true, ({ data }) => {
+    usePreventRemove(preventRemove, () => {
       onPreventRemove();
-      if (shouldContinue) {
-        props.navigation.dispatch(data.action);
-      }
     });
     usePreventRemove(false, () => {});
 
@@ -384,12 +382,11 @@ test("prevents removing a screen when 'usePreventRemove' hook is called multiple
     type: 'stack',
   });
 
-  shouldContinue = true;
+  act(() => setPreventRemove(false));
 
-  act(() => ref.current?.navigate('bar'));
   act(() => ref.current?.dispatch(StackActions.popTo('foo')));
 
-  expect(onStateChange).toHaveBeenCalledTimes(4);
+  expect(onStateChange).toHaveBeenCalledTimes(3);
   expect(onStateChange).toHaveBeenCalledWith({
     index: 0,
     key: 'stack-2',
@@ -510,14 +507,13 @@ test("prevents removing a child screen with 'usePreventRemove' hook", () => {
 
   const onPreventRemove = jest.fn();
 
-  let shouldContinue = false;
+  let setPreventRemove: React.Dispatch<React.SetStateAction<boolean>>;
 
-  const TestScreen = (props: any) => {
-    usePreventRemove(true, ({ data }) => {
+  const TestScreen = () => {
+    const [preventRemove, setPreventRemoveState] = React.useState(true);
+    setPreventRemove = setPreventRemoveState;
+    usePreventRemove(preventRemove, () => {
       onPreventRemove();
-      if (shouldContinue) {
-        props.navigation.dispatch(data.action);
-      }
     });
 
     return null;
@@ -643,7 +639,7 @@ test("prevents removing a child screen with 'usePreventRemove' hook", () => {
     type: 'stack',
   });
 
-  shouldContinue = true;
+  act(() => setPreventRemove(false));
 
   act(() => ref.current?.navigate('bar'));
   act(() => ref.current?.dispatch(StackActions.popTo('foo')));
@@ -672,14 +668,13 @@ test("prevents removing a grand child screen with 'usePreventRemove' hook", () =
 
   const onPreventRemove = jest.fn();
 
-  let shouldContinue = false;
+  let setPreventRemove: React.Dispatch<React.SetStateAction<boolean>>;
 
-  const TestScreen = (props: any) => {
-    usePreventRemove(true, ({ data }) => {
+  const TestScreen = () => {
+    const [preventRemove, setPreventRemoveState] = React.useState(true);
+    setPreventRemove = setPreventRemoveState;
+    usePreventRemove(preventRemove, () => {
       onPreventRemove();
-      if (shouldContinue) {
-        props.navigation.dispatch(data.action);
-      }
     });
 
     return null;
@@ -810,7 +805,7 @@ test("prevents removing a grand child screen with 'usePreventRemove' hook", () =
     type: 'stack',
   });
 
-  shouldContinue = true;
+  act(() => setPreventRemove(false));
 
   act(() => ref.current?.navigate('bar'));
   act(() => ref.current?.dispatch(StackActions.popTo('foo')));
@@ -843,21 +838,14 @@ test("prevents removing by multiple screens with 'usePreventRemove' hook", () =>
     lex: jest.fn(),
   };
 
-  const shouldContinue = {
-    bar: true,
-    baz: true,
-    lex: true,
-  };
+  const setPreventRemove: Record<string, React.Dispatch<React.SetStateAction<boolean>>> = {};
 
   const TestScreen = (props: any) => {
-    usePreventRemove(true, ({ data }) => {
+    const [preventRemove, setPreventRemoveState] = React.useState(true);
+    setPreventRemove[props.route.name] = setPreventRemoveState;
+    usePreventRemove(preventRemove, () => {
       // @ts-expect-error: we should have the required mocks
       onPreventRemove[props.route.name]();
-
-      // @ts-expect-error: we should have the required properties
-      if (!shouldContinue[props.route.name]) {
-        props.navigation.dispatch(data.action);
-      }
     });
 
     return null;
@@ -946,7 +934,9 @@ test("prevents removing by multiple screens with 'usePreventRemove' hook", () =>
 
   expect(ref.current?.getRootState()).toEqual(preventedState);
 
-  shouldContinue.lex = false;
+  act(() => {
+    setPreventRemove.lex!(false);
+  });
 
   act(() => ref.current?.dispatch(StackActions.popTo('foo')));
 
@@ -955,7 +945,9 @@ test("prevents removing by multiple screens with 'usePreventRemove' hook", () =>
 
   expect(ref.current?.getRootState()).toEqual(preventedState);
 
-  shouldContinue.baz = false;
+  act(() => {
+    setPreventRemove.baz!(false);
+  });
 
   act(() => ref.current?.dispatch(StackActions.popTo('foo')));
 
@@ -964,7 +956,9 @@ test("prevents removing by multiple screens with 'usePreventRemove' hook", () =>
 
   expect(ref.current?.getRootState()).toEqual(preventedState);
 
-  shouldContinue.bar = false;
+  act(() => {
+    setPreventRemove.bar!(false);
+  });
 
   act(() => ref.current?.dispatch(StackActions.popTo('foo')));
 

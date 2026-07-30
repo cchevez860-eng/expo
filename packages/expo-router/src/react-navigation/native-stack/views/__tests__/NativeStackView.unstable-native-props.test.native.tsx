@@ -142,3 +142,11 @@ describe('unstable_nativeProps', () => {
     expect(props.headerConfig?.title).toBe('index');
   });
 });
+
+it('sets preventNativeDismiss from the preventRemove option', () => {
+  ScreenStackItem.mockClear();
+
+  const props = renderStack({ preventRemove: true });
+
+  expect(props.preventNativeDismiss).toBe(true);
+});
